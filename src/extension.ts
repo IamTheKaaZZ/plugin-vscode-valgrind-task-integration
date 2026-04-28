@@ -1,15 +1,18 @@
-import { ExtensionContext } from 'vscode';
-import contributeCommands from './contribute/commands';
-import contributeTasks from './contribute/tasks';
+import { ExtensionContext, debug, tasks } from 'vscode';
 import { ValgrindTaskProvider } from './tasks/ValgrindTaskProvider';
-import { ValgrindDebugTaskProvider } from './tasks/ValgrindDebugTaskProvider';
+import { ValgrindDebugConfigProvider } from './debug/ValgrindDebugConfigProvider';
 
 export function activate(context: ExtensionContext) {
-  const valgrindTaskProvider = new ValgrindTaskProvider();
-  const valgrindDebugTaskProvider = new ValgrindDebugTaskProvider();
+  const taskProvider = new ValgrindTaskProvider();
+  const debugConfigProvider = new ValgrindDebugConfigProvider();
 
   context.subscriptions.push(
-    ...contributeTasks(valgrindTaskProvider, valgrindDebugTaskProvider),
-    ...contributeCommands(valgrindDebugTaskProvider)
+    tasks.registerTaskProvider(ValgrindTaskProvider.type, taskProvider),
+    debug.registerDebugConfigurationProvider('valgrind', debugConfigProvider),
+    debugConfigProvider
   );
+}
+
+export function deactivate(): void {
+  // Cleanup handled by disposables registered in context.subscriptions
 }

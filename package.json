@@ -1,18 +1,22 @@
 {
-  "name": "valgrind-task-integration",
-  "displayName": "Valgrind Task Integration",
-  "description": "Integrate valgrind into vscode tasks and launch config",
+  "name": "valgrind-debug",
+  "displayName": "Valgrind Debug",
+  "description": "Debug C/C++ programs under Valgrind with a single launch configuration",
   "license": "MIT",
-  "author": "1nVitr0",
-  "publisher": "1nVitr0",
+  "author": "IamTheKaaZZ",
+  "publisher": "IamTheKaaZZ",
   "repository": {
     "type": "git",
-    "url": "https://github.com/1nVitr0/plugin-vscode-valgrind-task-integration.git"
+    "url": "https://github.com/IamTheKaaZZ/plugin-vscode-valgrind-task-integration.git"
   },
+  "bugs": {
+    "url": "https://github.com/IamTheKaaZZ/plugin-vscode-valgrind-task-integration/issues"
+  },
+  "homepage": "https://github.com/IamTheKaaZZ/plugin-vscode-valgrind-task-integration#readme",
   "icon": "resources/icon.png",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "engines": {
-    "vscode": "^1.53.0"
+    "vscode": "^1.63.0"
   },
   "categories": [
     "Debuggers",
@@ -27,51 +31,142 @@
     "debug"
   ],
   "activationEvents": [
-    "onCommand:valgrind-task-integration.valgrindPid",
-    "onCommand:valgrind-task-integration.valgrindGdbArg",
-    "onCommand:workbench.action.tasks.runTask"
+    "onDebugResolve:valgrind"
   ],
   "main": "./dist/extension.js",
-  "extensionDependencies": [
-    "ms-vscode.cmake-tools"
-  ],
   "contributes": {
-    "commands": [
-      {
-        "command": "valgrind-task-integration.valgrindPid",
-        "title": "Valgrind Task Integration: Get Valgrind Debugger pid"
-      },
-      {
-        "command": "valgrind-task-integration.valgrindGdbArg",
-        "title": "Valgrind Task Integration: Get Valgrind Debugger gdb arguments"
-      }
-    ],
-    "taskDefinitions": [
-      {
-        "type": "valgrind-debug",
-        "required": [
-          "target"
-        ],
-        "properties": {
-          "target": {
+    "configuration": {
+      "title": "Valgrind",
+      "properties": {
+        "valgrind.binary": {
+          "type": "string",
+          "default": "valgrind",
+          "description": "Path to the valgrind binary"
+        },
+        "valgrind.defaultArgs": {
+          "type": "array",
+          "items": {
             "type": "string"
           },
-          "valgrind": {
-            "type": "object",
+          "default": [
+            "--fullpath-after="
+          ],
+          "description": "Default valgrind arguments applied to all configurations"
+        },
+        "valgrind.debugger": {
+          "type": "string",
+          "enum": [
+            "cppdbg",
+            "codelldb"
+          ],
+          "default": "cppdbg",
+          "description": "Default C++ debugger to use with Valgrind debug sessions"
+        },
+        "valgrind.pidTimeout": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout in ms to wait for the Valgrind process to report its PID"
+        }
+      }
+    },
+    "debuggers": [
+      {
+        "type": "valgrind",
+        "label": "Valgrind",
+        "languages": [
+          "c",
+          "cpp"
+        ],
+        "configurationAttributes": {
+          "launch": {
             "required": [
-              "args"
+              "program"
             ],
             "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the executable to debug under Valgrind"
+              },
               "args": {
                 "type": "array",
                 "items": {
                   "type": "string"
-                }
+                },
+                "default": [],
+                "description": "Arguments to pass to the target program"
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory for the program"
+              },
+              "valgrindArgs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Additional arguments for valgrind (e.g. --leak-check=full)"
+              },
+              "valgrindBinary": {
+                "type": "string",
+                "description": "Path to the valgrind binary (overrides valgrind.binary setting)"
+              },
+              "debugger": {
+                "type": "string",
+                "enum": [
+                  "cppdbg",
+                  "codelldb"
+                ],
+                "default": "cppdbg",
+                "description": "The underlying C++ debugger to use"
+              },
+              "stopAtEntry": {
+                "type": "boolean",
+                "default": false,
+                "description": "Stop at the entry point of the program"
+              },
+              "setupCommands": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "ignoreFailures": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "text"
+                  ]
+                },
+                "description": "Additional GDB setup commands (cppdbg only)"
               }
             }
           }
-        }
-      },
+        },
+        "configurationSnippets": [
+          {
+            "label": "Valgrind: Launch",
+            "description": "Launch a program with Valgrind and the C++ debugger attached",
+            "body": {
+              "name": "Debug with Valgrind",
+              "type": "valgrind",
+              "request": "launch",
+              "program": "^\"\\${workspaceFolder}/path/to/executable\"",
+              "valgrindArgs": [
+                "--leak-check=full"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "taskDefinitions": [
       {
         "type": "valgrind",
         "required": [
@@ -79,21 +174,22 @@
         ],
         "properties": {
           "target": {
-            "type": "string"
+            "type": "string",
+            "description": "Path to the executable to run under Valgrind"
           },
-          "valgrind": {
-            "type": "object",
-            "required": [
-              "args"
-            ],
-            "properties": {
-              "args": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Arguments to pass to the target program"
+          },
+          "valgrindArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional arguments for valgrind"
           }
         }
       }
@@ -143,7 +239,8 @@
     "test-watch": "tsc -watch -p ./",
     "pretest": "npm run test-compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "npm run test-compile && mocha out/test/unit/**/*.test.js --require out/test/unit/setup.js --timeout 5000"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.1",
@@ -151,6 +248,8 @@
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.0.0",
+    "@types/proxyquire": "^1.3.31",
+    "@types/sinon": "^21.0.1",
     "@types/vscode": "^1.53.0",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
@@ -158,8 +257,10 @@
     "eslint-config-prettier": "^8.5.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
+    "proxyquire": "^2.1.3",
     "semantic-release": "^19.0.3",
     "semantic-release-vsce": "^5.0.17",
+    "sinon": "^21.1.2",
     "ts-loader": "^9.3.0",
     "typescript": "^4.7.4",
     "vscode-test": "^1.5.0",

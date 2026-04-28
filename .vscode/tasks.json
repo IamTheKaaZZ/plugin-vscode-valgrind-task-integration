@@ -4,12 +4,12 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "compile",
       "type": "npm",
       "script": "compile",
-      "problemMatcher": ["$ts-webpack-watch", "$tslint-webpack-watch"],
-      "isBackground": true,
+      "problemMatcher": [],
       "presentation": {
-        "reveal": "never"
+        "reveal": "silent"
       },
       "group": {
         "kind": "build",
